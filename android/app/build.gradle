@@ -21,22 +21,19 @@ if (keystorePropertiesFile.exists()) {
     hasKeyStore = true
 } else {
     println "+++"
-    println "No keystore defined. The app will not be signed."
-    println "Create a android/key.properties file with the following properties:"
-    println "storePassword"
-    println "keyPassword"
-    println "keyAlias"
-    println "storeFile"
+    println "No keystore defined. Using Debug Key for Javad VPN."
     println "+++"
 }
 
-def flutterVersionCode = localProperties.getProperty('flutter.versionCode')?: '1'
-
-def flutterVersionName = localProperties.getProperty('flutter.versionName') ?: '1.0'
+def flutterVersionCode = localProperties.getProperty('flutter.versionCode') ?: '1'
+// تغییر ورژن پیش‌فرض به ۳.۰.۰ برای نمایش قدرت
+def flutterVersionName = localProperties.getProperty('flutter.versionName') ?: '3.0.0'
 
 android {
-    namespace 'com.hiddify.hiddify'
-    testNamespace "test.com.hiddify.hiddify"
+    // هویت داخلی برنامه تغییر کرد
+    namespace 'com.javad.vpn'
+    testNamespace "test.com.javad.vpn"
+    
     compileSdkVersion 34
     ndkVersion "26.1.10909125"
 
@@ -54,7 +51,9 @@ android {
     }
 
     defaultConfig {
-        applicationId "app.hiddify.com"
+        // شناسه منحصر به فرد اپلیکیشن (پلاک شهرداری)
+        applicationId "com.javad.vpn"
+        
         minSdkVersion 21
         targetSdkVersion 34
         versionCode flutterVersionCode.toInteger()
@@ -68,7 +67,6 @@ android {
             reset()
             //noinspection ChromeOsAbiSupport
             include "x86_64", "armeabi-v7a", "arm64-v8a"
-
             universalApk true
         }
     }
@@ -86,11 +84,18 @@ android {
 
     buildTypes {
         release {
+            // اگر کلید امضا داری با اون، وگرنه با دیباگ امضا کن که بیلد فیل نشه
             if (hasKeyStore) {
                 signingConfig signingConfigs.release
             } else {
                 signingConfig signingConfigs.debug
             }
+            
+            // تنظیمات بهینه‌سازی برای کاهش حجم و افزایش امنیت
+            minifyEnabled true 
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
             ndk {
                 //noinspection ChromeOsAbiSupport
                 abiFilters "x86_64", "armeabi-v7a", "arm64-v8a"
@@ -103,7 +108,6 @@ android {
         viewBinding true
         aidl true
     }
-
 }
 
 android.applicationVariants.all { variant ->
