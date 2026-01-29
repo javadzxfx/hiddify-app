@@ -1,6 +1,6 @@
 name: Build
 on:
-  workflow_dispatch: # <--- این خط جادویی اضافه شد (برای دکمه دستی)
+  workflow_dispatch:
   workflow_call:
     inputs:
       upload-artifact:
@@ -143,10 +143,12 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: 7.5
+
+      # --- اصلاح شده: اینجا باید فقط پیش‌نیازها نصب بشه ---
       - name: Setup dependencies
         run: |
           make ${{ matrix.platform }}-install-dependencies
-
+      # --------------------------------------------------
 
       - name: Setup Android Signing Properties
         if: ${{ inputs.upload-artifact && startsWith(matrix.platform,'android') }}
@@ -178,11 +180,14 @@ jobs:
         run: |
           make ${{ matrix.platform }}-prepare
           tree
+
+      # --- اصلاح شده: اینجا دستور بیلد دیباگ اجرا میشه ---
       - name: Build ${{ matrix.platform }}
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
         run: |
-          make ${{ matrix.platform }}-release
+          flutter build apk --debug
+      # --------------------------------------------------
 
       - name: Code Sign
         if: ${{ inputs.upload-artifact && startsWith(matrix.platform,'windows') }}
@@ -225,7 +230,9 @@ jobs:
           cp ./build/app/outputs/flutter-apk/*arm64-v8a*.apk out/${TARGET_NAME_apk}-arm64.apk || echo "no arm64 apk"
           cp ./build/app/outputs/flutter-apk/*armeabi-v7a*.apk out/${TARGET_NAME_apk}-arm7.apk || echo "no arm7 apk"
           cp ./build/app/outputs/flutter-apk/*x86_64*.apk out/${TARGET_NAME_apk}-x86_64.apk || echo "no x64 apk"
-          cp ./build/app/outputs/flutter-apk/app-release.apk out/${TARGET_NAME_apk}-universal.apk || echo "no universal apk"
+          # --- اصلاح شده: کپی کردن نسخه debug ---
+          cp ./build/app/outputs/flutter-apk/app-debug.apk out/${TARGET_NAME_apk}-universal.apk || echo "no universal apk"
+          # ------------------------------------
 
       - name: Copy to out Android AAB
         if: matrix.platform == 'android-aab'
@@ -392,7 +399,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           merge-multiple: true
-          pattern: "*ios*"
+          pattern: "*"
           path: ./out/
 
       - uses: Apple-Actions/import-codesign-certs@v2
@@ -413,7 +420,6 @@ jobs:
           api-key-id: ${{ secrets.APPSTORE_API_KEY_ID }}
           api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
   
-
 
       - name: Import Apple Mobile Provisioning Profile
         run: |
