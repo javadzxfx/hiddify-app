@@ -1,5 +1,6 @@
 name: Build
 on:
+  workflow_dispatch: # <--- این خط جادویی اضافه شد (برای دکمه دستی)
   workflow_call:
     inputs:
       upload-artifact:
